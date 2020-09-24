@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+Description: >
+  Scheduled Lambda function that will start or stop the  instance based on the time.
+
+Resources:
+  StartEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Trigger every day to start the RDS"
+      ScheduleExpression: "cron(30 3 ? * MON-FRI *)"
+      State: "ENABLED"
+      Targets:
+        - Arn: !GetAtt "es-snapshots-lambda.Arn"
+          Id: "StartFunction"
+          Input: '{"service":"start"}'
+
+  LambdaStartPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt "es-snapshots-lambda.Arn"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt StartEventRule.Arn

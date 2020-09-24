@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+Description: >
+  Scheduled Lambda function that will start or stop the ec2 instance based on the time.
+
+Parameters:
+  InstanceID:
+    Type: String
+    Default: test
+    Description: Instance id of the ec2.
+
+Resources:
+  EC2LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ec2-lambda-execution-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: ec2-lambda-execution-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ec2:Start*
+                  - ec2:Stop*
+                Resource: "*"
+
+  EC2StartStopFunction:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      Description: "Lambda to start or stop the EC2 instance"
+      FunctionName: "Lambda_Start_Stop_EC2_Latest"
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt EC2LambdaExecutionRole.Arn
+      CodeUri: ./src/lambda_function.py
+      Environment:
+        Variables:
+          InstanceID: !Ref InstanceID
+      MemorySize: 128
+      Timeout: 30
+
+  EC2StartEventRule:
+    Type: AWS::Events::Rule
+    DependsOn: EC2StartStopFunction
+    Properties:
+      Description: "Trigger every day to start the EC2"
+      ScheduleExpression: "cron(30 3 ? * MON-FRI *)"
+      State: "ENABLED"
+      Targets:
+        - Arn: !GetAtt "EC2StartStopFunction.Arn"
+          Id: "StartFunction"
+          Input: '{"service":"start"}'
+
+  EC2StopEventRule:
+    Type: AWS::Events::Rule
+    DependsOn: EC2StartStopFunction
+    Properties:
+      Description: "Trigger every day to stop the EC2"
+      ScheduleExpression: "cron(30 14 ? * MON-FRI *)"
+      State: "ENABLED"
+      Targets:
+        - Arn: !GetAtt "EC2StartStopFunction.Arn"
+          Id: "StopFunction"
+          Input: '{"service":"stop"}'
+
+  LambdaStartPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt "EC2StartStopFunction.Arn"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EC2StartEventRule.Arn
+
+  LambdaStopPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt "EC2StartStopFunction.Arn"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EC2StopEventRule.Arn

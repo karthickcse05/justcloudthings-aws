@@ -1,0 +1,19 @@
+# boto3==1.9.75
+# requests==2.21.0
+# elasticsearch>=7.0.0
+# requests-aws4auth==0.9
+# awscli==1.16.89
+# boto==2.5.2
+# botocore==1.8.33
+
+
+boto3==1.9.116
+requests==2.21.0
+elasticsearch>=7.0.0
+requests-aws4auth==0.9
+botocore==1.12.104
+jsii==0.13.3
+urllib3==1.24.2
+pylint==2.3.0
+boto==2.49.0
+

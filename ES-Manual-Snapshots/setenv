@@ -1,0 +1,8 @@
+# You need to set the following environment variables in your shell
+export ESENDPOINT="xyz.eu-west-2.es.amazonaws.com"
+export AWSKEY="*********"                # With relevant permissions
+export AWSSECRET="*********"
+export AWSSECRETTOKEN="*********"
+export BUCKETNAME="testesappt"          # Bucket must already exist
+export AWSACCOUNTID="*********"    # 12 digit aws accountid that the ES domain belongs to.
+export PROFILE="appointments"           # Local aws profile with relevant permissions
